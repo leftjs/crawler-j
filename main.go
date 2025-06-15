@@ -639,9 +639,31 @@ func main() {
 		crawler := NewCrawler()
 
 		crawler.OnResult = func(res *ScrapeResult) {
-			// ... 原有结果处理逻辑 ...
-		}
+			stats.totalRequests++
 
+			if res.Error != nil {
+				log.Printf("错误爬取 %s: %v", res.URL, res.Error)
+				stats.errors++
+				return
+			}
+
+			stats.successful++
+			log.Printf("成功爬取 %s: %v", res.URL, res.Data)
+
+			// 根据处理结果更新统计
+			switch v := res.Data.(type) {
+			case MovieResult:
+				stats.moviesProcessed++
+				if v.TorrentsFound > 0 {
+					stats.moviesWithTorrents++
+				}
+				if v.DownloadSuccess {
+					stats.downloadSuccess++
+				} else {
+					stats.downloadFail++
+				}
+			}
+		}
 		// 启动爬虫
 		url := BASE_URL + START_URL
 		crawler.Run(url, listParser)
