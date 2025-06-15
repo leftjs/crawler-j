@@ -3,7 +3,7 @@
 
 # 使用多阶段构建
 # 阶段1: 构建
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25rc1-alpine AS builder
 
 WORKDIR /app
 
