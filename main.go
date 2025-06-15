@@ -574,7 +574,7 @@ type DownloadDB struct {
 }
 
 func (d *DownloadDB) Open() error {
-	db, err := bbolt.Open("downloads.db", 0600, nil)
+	db, err := bbolt.Open("db/downloads.db", 0600, nil)
 	if err != nil {
 		return err
 	}
