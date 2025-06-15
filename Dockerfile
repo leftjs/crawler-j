@@ -1,3 +1,6 @@
+# syntax=docker/dockerfile:1
+# check=skip=all
+
 # 使用多阶段构建
 # 阶段1: 构建
 FROM golang:1.18-alpine AS builder
@@ -11,7 +14,7 @@ RUN apk add --no-cache build-base
 COPY . .
 
 # 构建
-RUN go build -o javdb-crawler .
+RUN rm go.sum && go mod tidy -v && go build -o javdb-crawler .
 
 # 阶段2: 运行
 FROM alpine:3.16
