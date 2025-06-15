@@ -19,6 +19,13 @@ RUN rm go.sum && go mod tidy -v && go build -o javdb-crawler .
 # 阶段2: 运行
 FROM alpine:3.16
 
+# 设置时区为Asia/Shanghai
+RUN apk --no-cache add tzdata && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
+    apk del tzdata
+
+
 # 安装必要的库
 RUN apk --no-cache add ca-certificates
 
@@ -38,6 +45,7 @@ ENV MAX_DEPTH=3
  # 为空则立即运行一次
 ENV RUN_SCHEDULE=""
 ENV START_URL="/rankings/movies?p=daily&t=censored"
+ENV TZ="Asia/Shanghai"
 
 # 设置入口点
 ENTRYPOINT ["/app/javdb-crawler"]
