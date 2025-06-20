@@ -695,7 +695,7 @@ func main() {
 		}
 		// 启动爬虫
 
-		if singleCode != nil {
+		if *singleCode != "" {
 			crawler.Run(BASE_URL+"/search?q="+*singleCode, searchParser)
 		} else {
 			crawler.Run(BASE_URL+START_URL, listParser)
@@ -711,7 +711,7 @@ func main() {
 	}
 
 	// 检查是否需要定时执行
-	if RUN_SCHEDULE != "" && singleCode == nil {
+	if RUN_SCHEDULE != "" && *singleCode == "" {
 		log.Printf("配置定时任务，计划: %s", RUN_SCHEDULE)
 
 		// 初始化cron调度器
