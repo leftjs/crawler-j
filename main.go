@@ -99,7 +99,7 @@ func NewCrawler() *Crawler {
 }
 
 // 启动爬虫
-func (c *Crawler) Run(startURL string, parseFunc func(ctx context.Context, doc *goquery.Document) ([]Request, interface{})) {
+func (c *Crawler) Run(parseFunc func(ctx context.Context, doc *goquery.Document) ([]Request, interface{}), startURLs ...string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	c.cancelFunc = cancel
 
@@ -119,14 +119,17 @@ func (c *Crawler) Run(startURL string, parseFunc func(ctx context.Context, doc *
 	// 启动监控器（当队列为空时停止）
 	go c.monitorQueue()
 
-	// 提交初始请求
-	c.idleWg.Add(1)
-	c.submitRequest(Request{
-		URL:       startURL,
-		Ctx:       ctx,
-		Depth:     0,
-		ParseFunc: parseFunc,
-	})
+	for _, u := range startURLs {
+		// 提交初始请求
+		c.idleWg.Add(1)
+		c.submitRequest(Request{
+			URL:       u,
+			Ctx:       ctx,
+			Depth:     0,
+			ParseFunc: parseFunc,
+		})
+	}
+
 }
 
 // 等待爬虫完成
@@ -694,11 +697,15 @@ func main() {
 			}
 		}
 		// 启动爬虫
-
 		if *singleCode != "" {
-			crawler.Run(BASE_URL+"/search?q="+*singleCode, searchParser)
+			codes := strings.Split(*singleCode, " ")
+			var urls []string
+			for _, code := range codes {
+				urls = append(urls, BASE_URL+"/search?q="+code)
+			}
+			crawler.Run(searchParser, urls...)
 		} else {
-			crawler.Run(BASE_URL+START_URL, listParser)
+			crawler.Run(listParser, BASE_URL+START_URL)
 		}
 
 		// 等待爬虫完成
