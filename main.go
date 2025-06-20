@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -323,6 +324,30 @@ func listParser(ctx context.Context, doc *goquery.Document) ([]Request, interfac
 	return movieURLs, "列表页面解析完成"
 }
 
+// 列表页解析函数
+func searchParser(ctx context.Context, doc *goquery.Document) ([]Request, interface{}) {
+	var movieURLs []Request
+
+	// 查找所有电影项 - 根据实际HTML结构调整选择器
+	s := doc.Find(".movie-list .item").First()
+	if s == nil {
+		log.Printf("没有检索到影片")
+		return movieURLs, "<UNK>"
+	}
+	// 提取电影URL
+	moviePath, exists := s.Find("a").Attr("href")
+	if exists {
+		movieURL := BASE_URL + moviePath
+		movieURLs = append(movieURLs, Request{
+			URL:       movieURL,
+			ParseFunc: movieDetailParser,
+		})
+		log.Printf("发现电影链接: %s", movieURL)
+	}
+
+	return movieURLs, "列表页面解析完成"
+}
+
 // 解析新的HTML结构
 func parseNewHTML(doc *goquery.Document) []MagnetItem {
 	var items []MagnetItem
@@ -633,6 +658,10 @@ func main() {
 
 	log.Println("爬虫程序启动")
 
+	// 添加命令行参数支持
+	singleCode := flag.String("code", "", "指定影片番号进行单个影片下载")
+	flag.Parse()
+
 	// 创建执行函数
 	runCrawler := func() {
 		stats := &Stats{}
@@ -665,8 +694,12 @@ func main() {
 			}
 		}
 		// 启动爬虫
-		url := BASE_URL + START_URL
-		crawler.Run(url, listParser)
+
+		if singleCode != nil {
+			crawler.Run(BASE_URL+"/search?q="+*singleCode, searchParser)
+		} else {
+			crawler.Run(BASE_URL+START_URL, listParser)
+		}
 
 		// 等待爬虫完成
 		log.Println("等待爬虫完成工作...")
@@ -678,7 +711,7 @@ func main() {
 	}
 
 	// 检查是否需要定时执行
-	if RUN_SCHEDULE != "" {
+	if RUN_SCHEDULE != "" && singleCode == nil {
 		log.Printf("配置定时任务，计划: %s", RUN_SCHEDULE)
 
 		// 初始化cron调度器
